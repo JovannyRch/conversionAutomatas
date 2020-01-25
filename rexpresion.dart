@@ -30,7 +30,7 @@ class Expresion {
 
     this.thompson = this.evaluar(this.postfija);
     this.thompson.printAutomata();
-    //this.thompson.thompsonToNFA(this.thompson);
+    this.thompson.thompsonToNFA(this.thompson);
   }
 
   Automata evaluar(expresion) {
@@ -105,7 +105,7 @@ class Expresion {
 main() {
   List<String> operadores = ["*", ".", "|", "(", ")"];
   Map prec = {"*": 2, ".": 1, "|": 0, "(": -1, ")": -2};
-  String infija = "a*.b";
+  String infija = "a.b*";
   Expresion ex =
       Expresion(infija: infija, operadores: operadores, precedencia: prec);
   print(ex.postfija);

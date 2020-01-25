@@ -5,6 +5,8 @@ class Automata {
   List<String> alphabet = [];
   List<String> finalStates = [];
   String initialState = '';
+  Automata nfa;
+  Automata thompson;
   Automata afd;
   Automata afdreducido;
   static int contadorAutomatas = 0;
@@ -15,19 +17,20 @@ class Automata {
 
   List<Transicion> transitions = [];
 
-  void convertirDFA() {
+  Automata convertirDFA() {
     int nCombinations = math.pow(2, this.states.length).toInt();
 
     List<List<String>> nuevosEstados = [];
     List<List<String>> finales = [];
     String inicial = "";
     //Construcción de los nuevos estados
-    for (var i = 0; i < nCombinations - 1; i++) {
+    for (var i = 1; i < nCombinations; i++) {
       int binario = toBin(i);
       String binFormated = formatBin(this.states.length, binario);
       String binChido = binFormated.split('').reversed.join();
       List<String> estadoNuevo = [];
       bool isFinal = false;
+
       for (var j = 0; j < this.states.length; j++) {
         if (binChido[j] == '1') {
           estadoNuevo.add(this.states[j]);
@@ -63,8 +66,10 @@ class Automata {
         alphabet: alphabet,
         initialState: inicial,
         transitions: nuevasTransiciones);
+
     this.afdreducido = this.afd.renombrar(this.afd);
     afdreducido.printAutomata();
+    return afdreducido;
   }
 
   void printAutomata() {
@@ -111,7 +116,8 @@ class Automata {
     List<Transicion> ts = [];
     for (String q in a.states) {
       ep1 = this.epsilonClosure(q, a.transitions);
-
+      print("Recorriendo $q");
+      print("FS ${a.finalStates}");
       if (finales.indexOf(a.finalStates[0]) == -1 &&
           ep1.contains(a.finalStates[0])) {
         finales.add(q);
@@ -131,26 +137,26 @@ class Automata {
           mapEstados[ep2.toString()] = Automata.nextState();
 
         if (ep2.length > 0) {
-          print("($q,$letra) = ${ep2.toString()}");
-          Transicion(
-            qinput: q.toString(),
+          //print("($q,$letra) = ${ep2.toString()}");
+          ts.add(Transicion(
+            qinput: q,
             leter: letra,
-            qouput: ep2.map((f) => f.toString()).toList(),
-          );
+            qouput: ep2,
+          ));
         }
       }
     }
-    //print("finales $finales");
-    Automata b = new Automata(
+
+    this.nfa = new Automata(
         states: a.states,
         alphabet: a.alphabet,
         finalStates: finales,
         initialState: a.initialState,
         transitions: ts);
-    //b.printAutomata();
-    b.convertirDFA();
-    b.afd.printAutomata();
-    //b.afdreducido.printAutomata();
+    this.nfa.printAutomata();
+    this.nfa.convertirDFA();
+    //this.nfa.afd.printAutomata();
+    this.nfa.afdreducido.printAutomata();
   }
 
   //Alcanzables con una letra
@@ -199,14 +205,13 @@ class Automata {
     String estadoActual = a.initialState;
     List<String> porRecorrer = [estadoActual];
     List<String> estados = [estadoActual];
-    List<String> finales = [];
     int i = 0;
     List<Transicion> tsRenombradas = [];
     while (i < porRecorrer.length) {
-      //print(porRecorrer);
       String q = porRecorrer[i];
 
       List<Transicion> ts = this.buscarTransiciones(q, a.transitions);
+
       List<List<String>> siguientes = ts.map((f) => f.qouput).toList();
 
       for (List<String> s in siguientes) {
@@ -218,7 +223,6 @@ class Automata {
         }
       }
       for (Transicion t in ts) {
-        //print("renombrando $t");
         Transicion newT = Transicion(
             qinput: "q${estados.indexOf(t.qinput)}",
             leter: t.leter,
